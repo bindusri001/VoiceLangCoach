@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VoiceLangCoach - Telugu-English Coach</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; text-align: center; }
+        #output { margin: 20px 0; padding: 20px; border: 2px solid #007bff; border-radius: 10px; }
+        button { background: #007bff; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 25px; cursor: pointer; }
+        audio { width: 100%; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎓 VoiceLangCoach</h1>
+    <p>Practice Telugu-English code-mixing! Speak → Get instant feedback</p>
+    
+    <button onclick="startListening()">🎤 Start Speaking</button>
+    <div id="output"></div>
+    <audio id="feedbackAudio" controls></audio>
+    
+    <script>
+        let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-IN';  // Telugu-English mix
+        recognition.continuous = false;
+
+        function startListening() {
+            recognition.start();
+            document.getElementById('output').innerHTML = 'Listening... 🗣️';
+        }
+
+        recognition.onresult = async function(event) {
+            let text = event.results[0][0].transcript;
+            document.getElementById('output').innerHTML = `You said: "${text}"`;
+            
+            const response = await fetch('/speak', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: text})
+            });
+            const data = await response.json();
+            
+            if (data.audio) {
+                document.getElementById('feedbackAudio').src = data.audio;
+                document.getElementById('feedbackAudio').play();
+                document.getElementById('output').innerHTML += `<br><strong>Coach:</strong> ${data.feedback}`;
+            }
+        };
+    </script>
+</body>
+</html>
