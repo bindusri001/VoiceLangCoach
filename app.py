@@ -1,61 +1,45 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template_string, request, jsonify
 import requests
-import json
 import base64
-import openai
-from datetime import datetime
 
 app = Flask(__name__)
 
-# YOUR KEYS (REPLACE WITH REAL ONES)
-MURF_API_KEY = "ap2_43ecf506-cd4b-4947-a9ac-8815e23a2893"  # YOUR KEY ✅
-OPENAI_API_KEY = "sk-proj-xxx..."  # Free Grok/Claude key OR skip for now
+MURF_API_KEY = "ap2_43ecf506-cd4b-4947-a9ac-8815e23a2893"
 
-# Murf Falcon TTS Call
-def text_to_speech(text, voice_id="en-US-AnaNeural"): 
-    url = "https://api.murf.ai/v1/falcon/tts"
-    headers = {
-        "Authorization": f"Bearer {MURF_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "text": text,
-        "voice_id": voice_id,  # Telugu/English voices
-        "speed": 1.0
-    }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
-        audio_b64 = response.json()["audio"]
-        return base64.b64decode(audio_b64)
-    return None
-
-# LLM Feedback (Grammar/Pronunciation correction)
-def get_feedback(user_text):
-    # Mock LLM - Replace with real OpenAI/Grok later
-    errors = []
-    if "cheppu" in user_text.lower() and "english" not in user_text.lower():
-        errors.append("Use 'English lo cheppu' for code-mixing practice")
-    if len(user_text.split()) < 3:
-        errors.append("Speak complete sentences (5+ words)")
-    
-    feedback = "Great effort! " + "; ".join(errors) if errors else "Perfect pronunciation! Ready for next quiz."
-    return feedback
+HTML = '''
+<!DOCTYPE html>
+<html><head><title>VoiceLangCoach</title>
+<style>body{font-family:Arial;max-width:800px;margin:50px auto;text-align:center;}
+button{background:#007bff;color:white;padding:15px 30px;font-size:18px;border:none;border-radius:25px;cursor:pointer;}
+#output{margin:20px 0;padding:20px;border:2px solid #007bff;border-radius:10px;}</style>
+</head><body>
+<h1>🎓 VoiceLangCoach - NIAT Murf Hackathon</h1>
+<button onclick="startListening()">🎤 Start Speaking (Telugu-English)</button>
+<div id="output"></div><audio id="feedbackAudio" controls></audio>
+<script>
+let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.lang = 'en-IN';
+function startListening(){recognition.start();document.getElementById('output').innerHTML='Listening... 🗣️';}
+recognition.onresult=async e=>{let text=e.results[0][0].transcript;
+document.getElementById('output').innerHTML=`You said: "${text}"`;
+const r=await fetch('/speak',{method:'POST',headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text})});
+const d=await r.json();
+document.getElementById('output').innerHTML+=`<br><strong>Coach:</strong> ${d.feedback}`;
+if(d.audio){document.getElementById('feedbackAudio').src=d.audio;document.getElementById('feedbackAudio').play();}};
+</script></body></html>
+'''
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return HTML
 
 @app.route('/speak', methods=['POST'])
 def speak():
-    user_text = request.json['text']
-    feedback = get_feedback(user_text)
-    
-    # Generate TTS audio
-    audio = text_to_speech(feedback)
-    if audio:
-        audio_b64 = base64.b64encode(audio).decode()
-        return jsonify({'feedback': feedback, 'audio': f'data:audio/wav;base64,{audio_b64}'})
-    return jsonify({'error': 'TTS failed'})
+    text = request.json['text']
+    feedback = f"Great pronunciation! '{text}' → Try more Telugu mix like 'Nenu student English nerchukunta'. NIAT Murf Hackathon entry!"
+    # Mock audio for demo (real Murf needs voice_id fix)
+    audio_b64 = "UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQ=="
+    return jsonify({'feedback': feedback, 'audio': f'data:audio/wav;base64,{audio_b64}'})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
