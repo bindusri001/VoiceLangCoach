@@ -12,13 +12,7 @@ Andhra Pradesh students mix Telugu+English daily ("English lo cheppu nenu studen
 ✅ Real-time speech → text → code-mix analysis  
 ✅ Telugu/English fluency scoring (98/100 max)  
 ✅ Professional UI - works in any browser  
-✅ Built with Murf Falcon TTS API readiness  
-
-## 🏆 Why 1st Place
-- **Voice-first**: Complete speech pipeline  
-- **Local impact**: AP rural education gap  
-- **Production-ready**: Live deployed demo  
-- **Murf integration**: API key + TTS ready  
+✅ Built with Murf Falcon TTS API readiness    
 
 **Solo-built in 12 hours | March 17, 2026**
 #NIATXMurfAI #VoiceLangCoach
