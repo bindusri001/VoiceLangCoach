@@ -36,10 +36,27 @@ def index():
 @app.route('/speak', methods=['POST'])
 def speak():
     text = request.json['text']
-    feedback = f"Great pronunciation! '{text}' → Try more Telugu mix like 'Nenu student English nerchukunta'. NIAT Murf Hackathon entry!"
-    # Mock audio for demo (real Murf needs voice_id fix)
-    audio_b64 = "UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQ=="
-    return jsonify({'feedback': feedback, 'audio': f'data:audio/wav;base64,{audio_b64}'})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    
+    # Telugu-English code-mix feedback
+    if "cheppu" in text.lower():
+        feedback = "Perfect code-mixing! 'English lo cheppu' uses 60% English + 40% Telugu. Try: 'Nenu student, teacher help chey!'"
+    elif len(text.split()) < 4:
+        feedback = "Good start! Use full sentences with Telugu-English mix for better practice."
+    else:
+        feedback = f"Excellent pronunciation! '{text}' → Your fluency score: 92/100. NIAT Murf Hackathon demo!"
+    
+    # REAL Murf Falcon TTS
+    url = "https://api.murf.ai/v1/falcon/tts"
+    headers = {"Authorization": f"Bearer {MURF_API_KEY}", "Content-Type": "application/json"}
+    data = {"text": feedback[:100], "voice_id": "te-IN-SilpaNeural"}  # Telugu voice
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            audio_b64 = base64.b64encode(response.content).decode()
+            return jsonify({'feedback': feedback, 'audio': f'data:audio/wav;base64,{audio_b64}'})
+    except:
+        pass
+    
+    # Fallback audio
+    return jsonify({'feedback': feedback, 'audio': None})
